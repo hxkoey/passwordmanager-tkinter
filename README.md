@@ -1,4 +1,4 @@
-## PASSWORD VAULT
+## PASSWORD MANAGER
 
 ### Requirements
 * tkinter
