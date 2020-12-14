@@ -3,6 +3,7 @@ from tkinter import messagebox
 import random
 import pyperclip
 from datetime import datetime
+import json
 
 NAVY = '#0A043C'
 GREY = '#bbbbbb'
@@ -49,29 +50,51 @@ def saved_entries():
     user_email = email_entry.get()
     user_password = password_entry.get()
 
+    new_data = {
+        user_website: {
+            'email': user_email,
+            'password': user_password
+            }
+        }
     if len(user_website) != 0 and len(user_password) != 0:
 
-        # PROMPT USER FOR CONFIRMATION
-        is_correct = messagebox.askyesno(
-            title=f'{user_website}',
-            message=f'Email: {user_email}\nPassword: {user_password}\nAre these correct?'
-            )
-        # CREATING FILE IF DOES NOT EXIST, AND APPENDING NEW ENTRY
-        if is_correct:
-            with open("saved_entries.txt", "a+") as f:
-                single_entry = f'{user_website} | {user_email} | {user_password} | {datetime.today().date()}'
-                f.write(single_entry)
-                f.write('\n')
-
-            # CLEAR ENTRY AFTER SAVING
-            website_entry.delete(0, END)
-            password_entry.delete(0, END)
+        try:
+            with open('data.json', 'r') as data_file:
+                data = json.load(data_file)
+                data.update(new_data)
+        except FileNotFoundError:
+            with open('data.json','w') as data_file:
+                json.dump(new_data, data_file, indent=4)
+        else:
+            is_correct = messagebox.askyesno(
+                    title=f"{user_website}",
+                    message=f"\n'email': {user_email}\n'password': {user_password}\n\nPlease confirm before saving!")
+            if is_correct:
+                with open('data.json','w') as data_file:
+                    json.dump(data, data_file, indent=4)
+                    website_entry.delete(0, END)
+                    password_entry.delete(0, END)
     else:
         # IF WEBSITE OR EMAIL ENTRY IS BLANK
         messagebox.showwarning(
             title='Oops',
             message="Please don't leave any fields empty!"
             )
+# ---------------------------- SEARCH FUNCTION ------------------------------- #
+def search_website():
+
+    user_website = website_entry.get().capitalize()
+
+    try:
+        with open('data.json', 'r') as data_file:
+            data = json.load(data_file)
+            user_password = data[user_website]['password']
+            password_entry.delete(0, END)
+            password_entry.insert(0, user_password)
+    except KeyError as error_msg:
+        messagebox.showinfo(title="Key Error", message=f"{error_msg} password does not exist")
+    except FileNotFoundError as error_msg:
+        messagebox.showinfo(message="File does not exist. Try using Add instead")
 # ---------------------------- UI SETUP ------------------------------- #
 
 root = Tk()
@@ -88,15 +111,18 @@ canvas.grid(row=0,column=1)
 website_label = Label(text='Website:', bg=NAVY, fg=BEIGE)
 website_label.grid(row=1,column=0,sticky="W")
 
-website_entry = Entry()
+website_entry = Entry(font=('Arial',15))
 website_entry.grid(row=1,column=1, columnspan=2,sticky="EW")
 website_entry.focus()
+
+website_search = Button(text='Search', bg=GREY, command=search_website)
+website_search.grid(row=1,column=2,sticky="EW")
 
 # ROW 2
 email_label = Label(text='Email/Username:', bg=NAVY, fg=BEIGE)
 email_label.grid(row=2,column=0,sticky="W")
 
-email_entry = Entry()
+email_entry = Entry(font=('Arial',15))
 email_entry.grid(row=2,column=1, columnspan=2,sticky="EW")
 email_entry.insert(0, 'myusername@gmail.com')
 
@@ -104,7 +130,7 @@ email_entry.insert(0, 'myusername@gmail.com')
 password_label = Label(text='Password:', bg=NAVY, fg=BEIGE)
 password_label.grid(row=3,column=0,sticky="W")
 
-password_entry = Entry()
+password_entry = Entry(font=('Arial',15))
 password_entry.grid(row=3,column=1,sticky="EW")
 
 password_button = Button(text='Generate Password', bg=GREY, command=random_password)
