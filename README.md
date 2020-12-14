@@ -3,7 +3,7 @@
 ### Requirements
 * tkinter
 * random
-* datetime
+* json
 * pyperclip
 
 ### Description
